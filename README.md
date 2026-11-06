@@ -53,3 +53,8 @@ Font, copied from MiniGolf's cells 16–41 and 6–15:
 The project-wide licence remains unassigned; the font's CC-BY 4.0 attribution is retained independently.
 
 Edit rooms in `assets/dungeon.tmx`; the palette and named tile/animation slices live in `assets/zdungeon.aseprite`.
+
+   ## Credits
+
+   - @harlock74 – design and development
+   - @zoul0813 – playtesting and general code optimization
