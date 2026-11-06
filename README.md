@@ -6,8 +6,8 @@ It runs at **640×480 @8bpp** with the Zeal Video Board.
 
 ## Screenshots
 
-| Title Screen | Gameplay | Transport | Ending |
-| - | - | - | - |
+| Title Screen | Floor 1| Floor 2 |
+| - | - | - |
 | ![Title screen](./screenshots/1.png) | ![Floor 1](./screenshots/2.png) | ![Floor 2](./screenshots/3.png) |
 
 <!-- Keep the screenshots folder in the repository alongside this README. -->
