@@ -1,0 +1,35 @@
+bin/
+*.zip
+/release
+/tmp
+build/
+build-*/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+*.bin
+*.ihx
+*.map
+*.cdb
+*.noi
+*.rel
+*.sym
+*.lst
+*.asm
+*.DS_Store
+assets/*.zt[spm]
+*.tiled-session
+
+# Python authoring/check tools
+__pycache__/
+
+# The root Makefile is a source-controlled ZDE wrapper.
+!/Makefile
+
+
+# Rejected patches and generated debugging output
+*.rej
+debug/
