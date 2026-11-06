@@ -10,6 +10,9 @@ set(APP_NAME "zdungeon")
 set(target_name "zdungeon")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/bin)
 set(RUNTIME_ASSETS ${CMAKE_BINARY_DIR}/runtime/assets)
+# Remove legacy test executables when upgrading an existing checkout.
+file(REMOVE "${CMAKE_CURRENT_LIST_DIR}/bin/zdungeon_boot"
+    "${CMAKE_CURRENT_LIST_DIR}/bin/zdungeon_test")
 
 # -------------------------------
 # Toolchain
@@ -34,7 +37,8 @@ foreach(app zdungeon zdungeon_boot zdungeon_test)
     target_compile_options(${app} PRIVATE --sdcccall 1)
     if(NOT app STREQUAL zdungeon)
         target_compile_definitions(${app} PRIVATE ZDUNGEON_AUTOSTART_RESET=1)
-        set_target_properties(${app} PROPERTIES EXCLUDE_FROM_ALL TRUE)
+        set_target_properties(${app} PROPERTIES EXCLUDE_FROM_ALL TRUE
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test-bin")
     endif()
     if(app STREQUAL zdungeon_test)
         target_sources(${app} PRIVATE src/autotest.c)
@@ -124,9 +128,11 @@ add_custom_command(OUTPUT ${RUNTIME_ASSETS}/zdungeon.zts ${RUNTIME_ASSETS}/zdung
     DEPENDS ${CMAKE_BINARY_DIR}/assets/zdungeon.zts ${CMAKE_BINARY_DIR}/assets/zdungeon.ztp
     VERBATIM)
 add_custom_target(art ALL DEPENDS ${RUNTIME_ASSETS}/zdungeon.zts ${RUNTIME_ASSETS}/zdungeon.ztp)
-add_custom_target(runtime_link ALL
-    COMMAND ${CMAKE_COMMAND} -E create_symlink ../build/runtime/assets
-        ${CMAKE_SOURCE_DIR}/bin/assets
+# SDK copy_assets flattens basenames, so preserve the streamed rooms directory.
+add_custom_target(runtime_copy ALL
+    COMMAND ${CMAKE_COMMAND} -E rm -rf ${CMAKE_SOURCE_DIR}/bin/assets
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${RUNTIME_ASSETS} ${CMAKE_SOURCE_DIR}/bin/assets
     DEPENDS art rooms VERBATIM)
 foreach(app zdungeon zdungeon_boot zdungeon_test)
     add_dependencies(${app} art rooms)
@@ -136,6 +142,11 @@ endforeach()
 # Convert to binary
 # -------------------------------
 foreach(app zdungeon zdungeon_boot zdungeon_test)
+    if(app STREQUAL zdungeon)
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
+    else()
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test-bin")
+    endif()
     zos_add_outputs(${app})
     coreutils_add_post_build_artifacts(${app}
         OUT_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
@@ -143,13 +154,13 @@ foreach(app zdungeon zdungeon_boot zdungeon_test)
     if(app STREQUAL zdungeon)
         add_custom_target(${app}_check ALL
             COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/check_memory.py
-                ${CMAKE_BINARY_DIR}/debug/${app}.map ${CMAKE_SOURCE_DIR}/bin/${app}
+                ${CMAKE_BINARY_DIR}/debug/${app}.map ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${app}
             DEPENDS ${app}_bin VERBATIM)
     else()
         set_target_properties(${app}_bin PROPERTIES EXCLUDE_FROM_ALL TRUE)
         add_custom_target(${app}_check
             COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/check_memory.py
-                ${CMAKE_BINARY_DIR}/debug/${app}.map ${CMAKE_SOURCE_DIR}/bin/${app}
+                ${CMAKE_BINARY_DIR}/debug/${app}.map ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${app}
             DEPENDS ${app}_bin VERBATIM)
     endif()
 endforeach()
