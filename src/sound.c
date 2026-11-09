@@ -70,6 +70,8 @@ static void hold(uint8_t voices, uint8_t value)
 }
 static void start(uint8_t voice, uint8_t event, uint16_t divider, uint8_t volume, uint8_t waveform)
 {
+    /* event is consumed by the test-only sound-start recorder. */
+    (void)event;
     /* Same hold -> volume -> frequency/wave -> unhold ordering as before,
      * with one peripheral mapping and no nested SDK hold transactions. */
     zvb_map_peripheral(ZVB_PERI_SOUND_IDX);

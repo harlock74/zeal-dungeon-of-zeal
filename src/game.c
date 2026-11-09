@@ -123,7 +123,8 @@ static uint8_t structure(uint8_t x, uint8_t y)
 static const uint8_t bit_mask[8] = { 1, 2, 4, 8, 16, 32, 64, 128 };
 static uint8_t wall(uint8_t x, uint8_t y)
 {
-    return solid[(uint16_t)y * 5 + (x >> 3)] & bit_mask[x & 7];
+    uint8_t tile = room_tiles[(uint16_t)(y + 2) * 40 + x];
+    return room_solid_tiles[tile >> 3] & bit_mask[tile & 7];
 }
 uint8_t game_blocked(uint8_t x, uint8_t y)
 {
@@ -182,6 +183,10 @@ static uint8_t duplicate(uint8_t room, uint8_t x, uint8_t y, uint8_t except)
 #ifdef __SDCC
 static void create_enemy(uint8_t i, uint8_t room, const RoomObject* o) __naked
 {
+    /* The assembly reads these through the register/stack ABI. */
+    (void)i;
+    (void)room;
+    (void)o;
     __asm__(
         "push ix\n"
         "ld c,l\n"
@@ -596,6 +601,8 @@ static void population_occupancy(void) __naked
 }
 static void populate(uint8_t initial) __naked
 {
+    /* The assembly reads initial from A before storing population_initial. */
+    (void)initial;
     __asm__(
         "ld (_population_initial),a\n"
         "call _random8\n"
@@ -1010,7 +1017,7 @@ static void kill_enemy(uint8_t i)
 static uint8_t shot_contact(Shot* s)
 {
     uint8_t i;
-    RoomObject* o = room_objects;
+    RoomObject* o = current_room->objects;
     if (game_blocked(s->x, s->y))
         return 1;
     if (s->owner == 1) {
@@ -1023,7 +1030,7 @@ static uint8_t shot_contact(Shot* s)
         die();
         return 1;
     }
-    for (i = 0; i < room_object_count; ++i, ++o) {
+    for (i = 0; i < current_room->count; ++i, ++o) {
         if (s->y == o->y && o->kind >= 1 && o->kind <= 5 && o->kind != 4
             && (s->x == o->x || (o->kind == 5 && s->x == o->x + 1)) && game_object_active(o))
             return 1;
@@ -1096,8 +1103,8 @@ static uint8_t chest_at(uint8_t x, uint8_t y, uint8_t interact)
        cache only the chest subset; repeated enemy queries avoid unrelated sites. */
     if (chest_cache_room != g.room) {
         chest_cache_count = 0;
-        o = room_objects;
-        for (i = 0; i < room_object_count; ++i, ++o)
+        o = current_room->objects;
+        for (i = 0; i < current_room->count; ++i, ++o)
             if (o->kind == 5)
                 chest_cache[chest_cache_count++] = o;
         chest_cache_room = g.room;
@@ -1121,8 +1128,8 @@ static uint8_t chest_at(uint8_t x, uint8_t y, uint8_t interact)
 static void pickups(void)
 {
     uint8_t i;
-    for (i = 0; i < room_object_count; ++i) {
-        RoomObject* o = room_objects + i;
+    for (i = 0; i < current_room->count; ++i) {
+        RoomObject* o = current_room->objects + i;
         uint8_t outcome;
         if (o->kind < 1 || o->kind > 4 || g.x != o->x || (g.y != o->y && g.y + 1 != o->y))
             continue;

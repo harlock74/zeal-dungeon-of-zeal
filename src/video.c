@@ -607,8 +607,8 @@ void video_scene(void)
             }
         }
         room_copy();
-        for (i = 0; i < room_object_count; ++i) {
-            RoomObject* o = room_objects + i;
+        for (i = 0; i < current_room->count; ++i) {
+            RoomObject* o = current_room->objects + i;
             uint8_t tile = 0;
             if (o->kind == 4 || !game_object_active(o))
                 continue;
@@ -999,8 +999,8 @@ void video_frame(void)
     }
     if (g.item_dirty) {
         uint8_t k;
-        for (k = 0; k < room_object_count; ++k) {
-            RoomObject* o = room_objects + k;
+        for (k = 0; k < current_room->count; ++k) {
+            RoomObject* o = current_room->objects + k;
             uint8_t bit;
             if (o->kind < 1 || o->kind == 4 || o->kind > 5)
                 continue;

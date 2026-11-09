@@ -29,7 +29,10 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter)
 # -------------------------------
 # Executable
 # -------------------------------
-set(GAME_SOURCES src/main.c src/game.c src/input.c src/video.c src/sound.c src/world.c)
+set(ROOM_WALL_SOURCE "${CMAKE_BINARY_DIR}/generated/room_walls.c")
+set_source_files_properties(${ROOM_WALL_SOURCE} PROPERTIES GENERATED TRUE)
+set(GAME_SOURCES src/main.c src/game.c src/input.c src/video.c src/sound.c src/world.c
+    ${ROOM_WALL_SOURCE})
 foreach(app zdungeon zdungeon_boot zdungeon_test)
     add_executable(${app} ${GAME_SOURCES})
     target_include_directories(${app} PRIVATE src)

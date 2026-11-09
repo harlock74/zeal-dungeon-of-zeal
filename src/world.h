@@ -7,3 +7,5 @@ extern uint16_t room_load_max, floor_load_max;
 
 uint8_t world_splash(void);
 uint8_t world_splash_text(void);
+
+extern const uint8_t room_solid_tiles[32];

@@ -8,8 +8,9 @@
 #include "sound.h"
 #include "world.h"
 #include "video.h"
-uint8_t room_tiles[1200], room_object_count;
-RoomObject room_objects[16];
+uint8_t room_tiles[1200];
+FloorRoom* current_room = floor_rooms;
+static RoomObject title_objects[2];
 #ifdef ZDUNGEON_TEST
 extern uint16_t test_clock(void);
 uint16_t room_load_max, floor_load_max;
@@ -31,19 +32,11 @@ static uint8_t exact(zos_dev_t fd, void* target, uint16_t size)
 }
 static uint8_t scene_read(zos_dev_t fd, uint8_t floor, uint8_t room)
 {
-    uint8_t failed;
-    room_object_count = 0;
-    failed = exact(fd, header, 8);
-    if (!failed
-        && (memcmp(header, "ZTR1", 4) || header[4] > 16 || header[5] != floor || header[6] != room))
-        failed = 1;
-    if (!failed)
-        failed = exact(fd, room_tiles, 1200) || exact(fd, solid, 125);
-    if (!failed)
-        failed = exact(fd, room_objects, (uint16_t)header[4] * 4);
-    if (!failed)
-        room_object_count = header[4];
-    return failed;
+    if (exact(fd, header, 8)
+        || memcmp(header, "ZTR2", 4) || header[4] != 0
+        || header[5] != floor || header[6] != room || header[7] != 0)
+        return 1;
+    return exact(fd, room_tiles, 1200);
 }
 uint8_t world_load(uint8_t floor, uint8_t room)
 {
@@ -52,7 +45,6 @@ uint8_t world_load(uint8_t floor, uint8_t room)
 #ifdef ZDUNGEON_TEST
     uint16_t begin = test_clock(), elapsed;
 #endif
-    room_object_count = 0;
     filename[14] = '1' + floor;
     filename[17] = '0' + room / 3;
     filename[19] = '0' + room % 3;
@@ -63,6 +55,7 @@ uint8_t world_load(uint8_t floor, uint8_t room)
     close(fd);
     if (failed)
         return 2;
+    current_room = floor_rooms + room;
 #ifdef ZDUNGEON_TEST
     elapsed = test_clock() - begin;
     if (elapsed > room_load_max)
@@ -70,16 +63,18 @@ uint8_t world_load(uint8_t floor, uint8_t room)
 #endif
     return 0;
 }
-/* Title reuses the room buffer and object records. No second screen buffer.
+/* Title reuses the tile buffer and retains its own two legacy value records.
    The two value records contain kind7/8, cell x/y and digit width. */
 static zos_dev_t title_fd = -1;
 uint8_t world_splash(void)
 {
-    room_object_count = 0;
     title_fd = open("assets/splash.ztr", O_RDONLY);
     if (title_fd < 0)
         return 1;
-    if (scene_read(title_fd, 255, 255) || header[7] != 2 || room_object_count != 2) {
+    if (exact(title_fd, header, 8) || memcmp(header, "ZTR1", 4)
+        || header[4] != 2 || header[5] != 255 || header[6] != 255 || header[7] != 2
+        || exact(title_fd, room_tiles, 1200) || exact(title_fd, solid, 125)
+        || exact(title_fd, title_objects, sizeof(title_objects))) {
         close(title_fd);
         title_fd = -1;
         return 2;

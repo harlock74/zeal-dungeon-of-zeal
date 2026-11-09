@@ -6,7 +6,7 @@ import sys
 import xml.etree.ElementTree as ElementTree
 
 sys.dont_write_bytecode = True
-from validate_assets import read_rooms, room_error, dungeon_rooms
+from validate_assets import read_rooms, room_error, dungeon_rooms, solid_tile_numbers
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SDK_MAPS_DIR = PROJECT_ROOT / "build/maps"
@@ -14,8 +14,16 @@ RUNTIME_DIR = PROJECT_ROOT / "build/runtime/assets/rooms"
 
 
 def pack_rooms(room_sources):
-    """Keep ZTR1/ZTF1 bytes stable; the SDK has already converted the tiles."""
+    """Pack ZTR2 room tiles and a generated wall table; ZTF1 is the sole gameplay object store."""
     RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+    flags = bytearray(32)
+    for tile in solid_tile_numbers():
+        flags[tile // 8] |= 1 << (tile % 8)
+    generated = PROJECT_ROOT / "build/generated"
+    generated.mkdir(parents=True, exist_ok=True)
+    (generated / "room_walls.c").write_text(
+        '#include <stdint.h>\nconst uint8_t room_solid_tiles[32] = {'
+        + ','.join(str(value) for value in flags) + '};\n')
     for (floor, room), data in sorted(room_sources.items()):
         map_name = Path(data["name"])
         converted = (SDK_MAPS_DIR / map_name.with_suffix(".ztm")).read_bytes()
@@ -33,10 +41,15 @@ def pack_rooms(room_sources):
         collision = bytearray(125)
         for index, solid in enumerate(data["solid"]):
             collision[index // 8] |= solid << (index % 8)
-        objects = b"".join(bytes(record) for record in data["objects"])
-        header = b"ZTR1" + bytes([len(data["objects"]), floor, room, 0])
+        derived = bytearray(125)
+        for index, tile in enumerate(tiles[80:1080]):
+            if flags[tile // 8] & (1 << (tile % 8)):
+                derived[index // 8] |= 1 << (index % 8)
+        if derived != collision:
+            room_error(data["name"], "stored tile numbers cannot reproduce solid properties")
+        header = b"ZTR2" + bytes([0, floor, room, 0])
         (RUNTIME_DIR / map_name.with_suffix(".ztr")).write_bytes(
-            header + tiles + collision + objects
+            header + tiles
         )
 
     # Floor indexes contain fixed-size object records, not duplicated tile maps.

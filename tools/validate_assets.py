@@ -138,6 +138,12 @@ def dungeon_rooms():
             sources[f'f{f+1}_r{r//3}_{r%3}.tmx']=virtual
     return sources
 
+def solid_tile_numbers():
+    """Runtime tile-wall table, from the editable shared Tiled properties."""
+    root = ElementTree.parse(PROJECT_ROOT / 'assets/zdungeon.tsx').getroot()
+    return tuple(int(tile.get('id')) for tile in root.findall('tile')
+                 if read_properties(tile).get('solid') == 'true')
+
 def read_rooms():
     sources = dungeon_rooms()
     ts = ElementTree.parse(PROJECT_ROOT / 'assets/zdungeon.tsx').getroot()
