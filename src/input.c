@@ -10,11 +10,20 @@
 #include "world.h"
 #include "video.h"
 static uint8_t key_backing[127], *key_buffer, keys, release_prefix;
-static uint8_t blocked, keyboard_owner, pad_active;
+static uint8_t blocked, pad_active;
 static uint16_t pad_suppressed = 0x0fff;
 /* Small diagnostic history, read-only to the owned host test harness. */
 volatile uint16_t input_trace_seq;
 volatile uint8_t input_trace[128];
+#ifdef ZDUNGEON_TEST
+volatile uint8_t input_test_override, input_test_count, input_test_bytes[8], input_test_result;
+volatile uint16_t input_test_pad;
+const uint8_t input_test_codes[10] = { KB_UP_ARROW, KB_DOWN_ARROW, KB_LEFT_ARROW,
+    KB_RIGHT_ARROW, KB_KEY_SPACE, KB_KEY_Z, KB_KEY_ENTER, KB_ESC, KB_RELEASED, KB_KEY_A };
+const uint16_t input_test_buttons[12] = { BUTTON_UP, BUTTON_DOWN, BUTTON_LEFT,
+    BUTTON_RIGHT, BUTTON_B, BUTTON_START, BUTTON_SELECT, BUTTON_A, BUTTON_X,
+    BUTTON_Y, BUTTON_L, BUTTON_R };
+#endif
 void input_begin(void)
 {
     key_buffer = (uint8_t*)(((uintptr_t)key_backing + 63) & ~(uintptr_t)63);
@@ -39,10 +48,17 @@ uint8_t input_poll(void)
     uint16_t pad;
     for (;;) {
         uint16_t count = 64;
+#ifdef ZDUNGEON_TEST
+        if (input_test_override) {
+            count = input_test_count < 8 ? input_test_count : 8;
+            for (i = 0; i < count; ++i)
+                key_buffer[i] = input_test_bytes[i];
+            input_test_count = 0;
+        } else
+#endif
         if (read(DEV_STDIN, key_buffer, &count) != ERR_SUCCESS) {
             input_clear();
             release_prefix = 0;
-            pad_active = 0;
             break;
         }
         for (i = 0; i < count; ++i) {
@@ -80,8 +96,6 @@ uint8_t input_poll(void)
                 bit = QUIT;
                 break;
             }
-            if (bit)
-                keyboard_owner = 1;
             if (release_prefix) {
                 keys &= ~bit;
                 blocked &= ~bit;
@@ -95,17 +109,19 @@ uint8_t input_poll(void)
     bit = keys & 127;
     if (keys & 128)
         bit |= FIRE;
+#ifdef ZDUNGEON_TEST
+    pad = input_test_override ? input_test_pad : controller_read();
+#else
     pad = controller_read();
+#endif
     if (!(pad & 0xf000)) {
         pad_suppressed &= pad;
         pad &= ~pad_suppressed;
-        /* Explicit Start selects a pad. Floating/mouse lines cannot add arrows
-           to keyboard movement; a keyboard key selects keyboard ownership. */
-        if (pad & BUTTON_START) {
+        /* Ignore floating direction lines until a real mapped button is seen.
+           Once selected, keep the pad active alongside keyboard input. */
+        if (pad & (BUTTON_B | BUTTON_START | BUTTON_SELECT))
             pad_active = 1;
-            keyboard_owner = 0;
-        }
-        if (!pad_active || keyboard_owner)
+        if (!pad_active)
             return bit;
         if (pad & BUTTON_UP)
             bit |= U;

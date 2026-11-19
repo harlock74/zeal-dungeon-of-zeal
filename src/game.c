@@ -1137,8 +1137,7 @@ static void pickups(void)
             continue;
         if (o->kind == 4) {
             if (g.y == o->y) {
-                input_clear();
-                g.previous = 0;
+                /* Keep held directions for the single transport choice poll. */
                 video_collection(VIDEO_COLLECTION_CLEAR);
                 g.mode = TRANSPORT;
                 g.destination = g.floor < 7 ? g.floor + 1 : g.floor;
@@ -1408,34 +1407,26 @@ static void final_service(void)
         sound_event(6);
     }
 }
-static void transport(uint8_t pressed)
+static void transport(uint8_t held)
 {
     uint8_t dest, fallback = 0;
     Site* p = g.sites + 3;
     if (g.transport_frames < 255)
         ++g.transport_frames;
+    /* Eleven original service phases include unknown waits: retain the bounded
+       45-display-frame approximation and read the held direction once at its end.
+       Enter and Fire cannot confirm, pause or cancel either path. */
+    if (g.transport_frames < 45)
+        return;
     if (g.key && g.floor < 7) {
-        if ((pressed & (U | D)) == D) {
-            g.destination = g.floor ? g.floor - 1 : 0;
+        if ((held & (U | D)) == D) {
+            dest = g.floor ? g.floor - 1 : 0;
             if (!g.floor)
                 ++g.clamps;
-        } else if (pressed & U)
-            g.destination = g.floor + 1;
-        if (pressed & FIRE) {
-            g.mode = PLAY;
-            g.y = p->y + 2;
-            input_clear();
-            g.hud_dirty = 1;
-            return;
-        }
-        if (!(pressed & ENTER))
-            return;
-        dest = g.destination;
+        } else
+            dest = g.floor + 1;
+        g.destination = dest;
     } else {
-        /* Eleven original service phases include unknown waits: a visible bounded
-           45-display-frame transition is the documented duration approximation. */
-        if (g.transport_frames < 45 && !(pressed & ENTER))
-            return;
         if (!g.charges) {
             g.mode = PLAY;
             g.y = p->y + 1;
@@ -1509,7 +1500,7 @@ void game_tick(uint8_t held)
         return;
     }
     if (g.mode == TRANSPORT) {
-        transport(pressed);
+        transport(held);
         g.hud_dirty = 1;
         return;
     }

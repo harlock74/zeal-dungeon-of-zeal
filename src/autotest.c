@@ -10,6 +10,14 @@ volatile uint16_t test_seed = 1;
 static uint8_t quiet_ready;
 uint8_t test_input(void)
 {
+    if (test_mode == 10) {
+        if (g.mode != TITLE && !quiet_ready) {
+            game_fixture(2);
+            quiet_ready = 1;
+        }
+        input_test_result = input_poll();
+        return input_test_result;
+    }
     if (test_mode == 2)
         return test_held;
     if (test_mode == 6)

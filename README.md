@@ -15,24 +15,35 @@ It runs at **640×480 @8bpp** with the Zeal Video Board.
 ## Rules
 
 - Explore each floor's nine connected rooms. Shoot enemies to earn points.
-- Transport: with the key, step in and press Enter to go up one floor, or Down then Enter to go down one floor (Space or Z steps out). Without the key, or on floor 8, it sends you to a random floor from 1 to 4 using one transport charge; you start with two, and with none left you stay where you are.
 - You have a limited number of shots. Collect piles and pictures for more.
 - Carry piles to chests on the final floor and use a key to exchange them. Reach the final figure with no piles remaining to finish the encounter.
 - Start with five lives. Earn an extra life every 10,000 points, up to nine. The ending offers a harder repeat with more visible enemies.
 
+## The transport
+
+- Step into the transport and it starts by itself; the trip takes about a second.
+- **With the key:** hold **Down** from the moment you are inside until you arrive to go **down one floor**. Anything else – holding Up, or pressing nothing – takes you **up one floor**.
+- **Without the key, or on floor 8:** it sends you to a random floor from 1 to 4 using one transport charge. You start with two; with none left, you stay where you are.
+- The key is used up by the trip, so you need to find the key again on the new floor.
+
 ## Controls
 
-- `ENTER`: start, pause/resume, or go in the transport.
-- Arrow keys: move; in the transport with the key, Down chooses one floor down and Up one floor up.
-- `SPACE` or `Z`: fire while stationary; in the transport, step out.
-- `ESC` (or Select on the pad): return to ZealOS.
+| Action | Keyboard | Joypad |
+| - | - | - |
+| Move | Arrow keys | D-pad |
+| Fire (while stationary) | `SPACE` or `Z` | B |
+| Start, pause/resume | `ENTER` | Start |
+| Transport: go down | hold Down | hold Down |
+| Return to ZealOS | `ESC` | Select |
+
+The keyboard and the joypad can be used together.
 
 ## Game Flow
 
-1. Press Enter at the title and explore the starting floor.
-2. Find the key, shots and transport; in the transport, press Enter to go up one floor, or Down then Enter to go down.
+1. Press Enter (or Start) at the title and explore the starting floor.
+2. Find the key, shots and transport; step into the transport to go up one floor, or hold Down inside it to go down.
 3. Explore all eight floors, exchanging carried piles at a chest on the last floor.
-4. Reach the final encounter, then press Enter for a harder repeat.
+4. Reach the final encounter, then press Enter (or Start) for a harder repeat.
 
 ## Build
 

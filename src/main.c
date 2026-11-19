@@ -359,7 +359,10 @@ int main(void)
         game_tick(held);
         if (asset_error)
             asset_failure(1);
-        if (old_mode != g.mode || old_floor != g.floor || old_pause != g.paused
+        /* Transport must retain directions held while walking into it. The
+           transition ignores action buttons and clears input normally on exit. */
+        if ((old_mode != g.mode && g.mode != TRANSPORT)
+            || old_floor != g.floor || old_pause != g.paused
             || (old_lives != g.lives && !(room_handoff && g.lives > old_lives))) {
             input_clear();
             g.previous = 0;
@@ -411,7 +414,7 @@ int main(void)
             capture();
         }
         if (++progress == 3600 || test_mode == 2 || test_mode == 6 || test_mode == 8
-            || test_mode == 9 || (test_mode == 7 && g.frames < 600)) {
+            || test_mode == 9 || test_mode == 10 || (test_mode == 7 && g.frames < 600)) {
             progress = 0;
             progress_checkpoint();
             capture();
